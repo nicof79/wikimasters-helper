@@ -34,19 +34,30 @@
 
 ### Prix moyens et tendances
 
-- **Collection** et **Marketplace (liste)** : badge interactif affichant le
-  prix moyen de la carte, l'ancienneté de la donnée et la tendance sur
-  24h et 7 jours.
-- **Marketplace (détail d'une enchère)** :
-  - Côté **acheteur** : comparaison en direct entre l'enchère courante et le
-    prix moyen (par exemple `+1 500 sous la moyenne`).
-  - Côté **vendeur** : affichage du prix moyen pour t'aider à fixer ta mise
-    de départ.
+Un badge interactif s'affiche sous chaque carte de la collection et sous
+chaque enchère du marketplace. Il indique le prix moyen, l'ancienneté de
+la donnée (code couleur) et la tendance sur 24h.
+
+Sur le marketplace, une comparaison directe avec la mise en cours est
+également disponible : `+1 500 sous la moyenne`, par exemple.
+
+![Aperçu collection](assets/preview-market.png)
 
 ### Mise en valeur visuelle (halos)
 
-- **Halo jaune** autour des cartes marquées comme favorites
-- **Halo coloré** (couleur du tag) autour des cartes taguées
+Un halo coloré entoure les cartes selon leur statut :
+
+- **Halo jaune** — carte marquée comme favorite
+- **Halo coloré** (couleur du tag) — carte taguée dans une collection
+
+![Aperçu marketplace](assets/preview-collection.png)
+
+### Aide à la décision sur le marché
+
+- Côté **acheteur** : comparateur en direct entre l'enchère courante et le
+  prix moyen, mis à jour au fur et à mesure de la saisie.
+- Côté **vendeur** : affichage du prix moyen pour t'aider à fixer ta mise
+  de départ.
 
 ### Cache et fiabilité
 
