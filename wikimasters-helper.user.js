@@ -8,8 +8,10 @@
 // @run-at       document-idle
 // @author       nicof79
 // @license      MIT
-// @updateURL    https://github.com/nicof79/wikimasters-helper/raw/main/wikimasters-helper.user.js
-// @downloadURL  https://github.com/nicof79/wikimasters-helper/raw/main/wikimasters-helper.user.js
+// @homepageURL  https://github.com/nicof79/wikimasters-helper
+// @supportURL   https://github.com/nicof79/wikimasters-helper/issues
+// @updateURL    https://raw.githubusercontent.com/nicof79/wikimasters-helper/main/wikimasters-helper.user.js
+// @downloadURL  https://raw.githubusercontent.com/nicof79/wikimasters-helper/main/wikimasters-helper.user.js
 // ==/UserScript==
 
 (() => {
