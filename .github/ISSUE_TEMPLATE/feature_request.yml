@@ -1,0 +1,76 @@
+name: 💡 Proposer une fonctionnalité
+description: Suggérer une nouvelle fonctionnalité ou une amélioration
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de proposer une amélioration ! Les suggestions qui vont dans le
+        sens du projet (aide à la décision économique, lisibilité de
+        l'interface) seront étudiées en priorité.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Quel problème cette fonctionnalité résout-elle ?
+      description: Décris le besoin ou la frustration actuelle.
+      placeholder: |
+        Exemple :
+        Je ne sais pas quelles cartes sont devenues plus chères depuis
+        une semaine, et je voudrais pouvoir les repérer facilement.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solution proposée
+      description: Décris ce que tu aimerais voir apparaître.
+      placeholder: |
+        Exemple :
+        Un badge rouge clignotant sur les cartes dont la tendance 7j
+        dépasse +20 %, visible dès la page collection.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives envisagées
+      description: |
+        As-tu pensé à d'autres solutions ? Pourquoi celle-ci te semble-t-elle
+        meilleure ?
+    validations:
+      required: false
+
+  - type: textarea
+    id: mockup
+    attributes:
+      label: Maquette ou exemple visuel
+      description: |
+        Si tu as un croquis, une capture annotée ou une image d'un autre jeu
+        qui illustre ton idée, mets-la ici.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Importance pour toi
+      options:
+        - "Nice to have — ça serait cool mais pas urgent"
+        - "Utile — ça améliorerait mon usage régulier"
+        - "Critique — ça bloque mon usage du script"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Vérifications préalables
+      options:
+        - label: J'ai cherché dans les issues existantes et cette idée n'a pas déjà été proposée
+          required: true
+        - label: J'ai vérifié que cette fonctionnalité n'est pas déjà présente dans la dernière version du script
+          required: true

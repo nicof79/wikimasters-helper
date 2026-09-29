@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Lire la documentation
+    url: https://github.com/nicof79/wikimasters-helper/blob/main/README.md
+    about: Consulte le README pour l'installation, l'usage et les outils annexes
+  - name: 📝 Consulter le guide de contribution
+    url: https://github.com/nicof79/wikimasters-helper/blob/main/CONTRIBUTING.md
+    about: Comment signaler un bug, proposer une feature ou contribuer au code
+  - name: 💬 Voir les discussions existantes
+    url: https://github.com/nicof79/wikimasters-helper/issues?q=is%3Aissue
+    about: Avant d'ouvrir une nouvelle issue, vérifie qu'elle n'existe pas déjà

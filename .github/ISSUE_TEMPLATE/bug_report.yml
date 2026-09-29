@@ -1,0 +1,109 @@
+name: 🐛 Signaler un bug
+description: Signaler un comportement inattendu ou une erreur dans le script
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de prendre le temps de signaler ce bug.
+        Avant de continuer, vérifie que tu utilises bien la dernière version
+        du script (badge de version en bas à gauche de la page).
+
+  - type: input
+    id: version
+    attributes:
+      label: Version du script
+      description: Visible sur le badge en bas à gauche (ex. v1.2.9)
+      placeholder: v1.2.9
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Navigateur et version
+      description: "Ex. Firefox 130, Chrome 128, Edge 128…"
+      placeholder: Firefox 130
+    validations:
+      required: true
+
+  - type: input
+    id: manager
+    attributes:
+      label: Gestionnaire de userscripts
+      description: "Tampermonkey, Violentmonkey, Greasemonkey… avec sa version"
+      placeholder: Tampermonkey 5.3.3
+    validations:
+      required: true
+
+  - type: dropdown
+    id: page
+    attributes:
+      label: Page concernée
+      description: Sur quelle page le problème se produit-il ?
+      options:
+        - Collection
+        - Marketplace (liste)
+        - Marketplace (détail d'une enchère)
+        - Autre (préciser dans la description)
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description du bug
+      description: Que se passe-t-il ? Que devrais-tu voir à la place ?
+      placeholder: |
+        Exemple :
+        - Je suis sur la page collection, page 2
+        - Les badges de prix ne s'affichent pas sur certaines cartes
+        - Je m'attendais à voir un badge sur chaque carte
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Étapes de reproduction
+      description: Comment reproduire le problème de manière fiable ?
+      placeholder: |
+        1. Aller sur /collection
+        2. Attendre 30 secondes
+        3. Observer les cartes en bas de page
+    validations:
+      required: true
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Messages dans la console DevTools
+      description: |
+        Ouvre F12 → onglet Console, et colle les erreurs ou warnings
+        en lien avec `[Wikimasters Helper]`. Laisse vide s'il n'y a rien.
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Captures d'écran
+      description: |
+        Glisse-dépose ici des captures d'écran si ça aide à comprendre.
+        Tu peux aussi décrire visuellement le problème.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Vérifications préalables
+      options:
+        - label: J'utilise la dernière version du script
+          required: true
+        - label: J'ai cherché dans les issues existantes et ce bug n'a pas déjà été signalé
+          required: true
+        - label: J'ai désactivé les autres userscripts pour Wikimasters pour éliminer les conflits
+          required: false
