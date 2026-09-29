@@ -63,6 +63,8 @@ Un halo coloré entoure les cartes selon leur statut :
 
 - Stockage local (`localStorage`) pour réduire les requêtes API
 - Code couleur des badges selon la fraîcheur des données
+- **Trois états de badge** : prix trouvé (coloré), pas de ventes (`? —`, gris),
+  erreur de récupération (`! —`, rouge)
 - Gestion automatique du rate limit (backoff exponentiel)
 - Clic droit sur un badge pour forcer l'actualisation manuelle
 
@@ -107,6 +109,14 @@ de ton gestionnaire → **Vérifier les mises à jour**.
 
 **Survol** d'un badge → tooltip avec prix exact, date du dernier
 rafraîchissement, tendances 24h et 7j.
+
+**Interpréter un badge** :
+
+| Apparence | Signification |
+|---|---|
+| Symbole `▲`/`▼`/`=`/`—` + prix | Prix moyen connu, fraîcheur selon la couleur de fond |
+| `? —` sur fond gris | Aucune vente enregistrée pour cette carte |
+| `! —` sur fond rouge | Erreur de récupération (clic droit pour réessayer) |
 
 ---
 

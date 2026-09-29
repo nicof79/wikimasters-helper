@@ -7,6 +7,41 @@ versionnage suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ---
 
+## [1.2.11] — 2026-09-30
+
+### Added
+- Badge d'erreur `! —` (fond rouge) sur les cartes dont le prix n'a pas
+  pu être récupéré (erreur réseau, timeout). Distinct du badge `? —` (gris)
+  qui signale simplement l'absence de ventes.
+
+### Changed
+- `showPriceBadge` prend désormais un paramètre d'état explicite
+  (`'ok'` / `'nosales'` / `'error'`) pour gérer les trois cas visuellement
+- Le health-check affiche la répartition des badges par état
+
+---
+
+## [1.2.10] — 2026-09-30
+
+### Added
+- Badge neutre `? —` sur les cartes de la collection sans ventes enregistrées
+  (au lieu de l'absence de badge, qui laissait un doute sur le fonctionnement
+  du script)
+- Outil console `tools/health-check.js` pour un diagnostic rapide de l'état
+  du script (version, cache, badges, halos, erreurs)
+
+### Changed
+- `fetchPriceForCard` distingue maintenant trois cas : prix trouvé (number),
+  pas de ventes (null), erreur réseau (undefined). Le worker utilise cette
+  distinction pour afficher soit le prix, soit un badge neutre, soit rien.
+
+### Fixed
+- Les cartes sans ventes enregistrées sur la collection n'ont plus
+  l'apparence d'un bug silencieux : elles affichent un badge gris
+  identifiable
+
+---
+
 ## [1.2.9] — 2026-09-29
 
 ### Changed

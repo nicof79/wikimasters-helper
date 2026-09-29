@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wikimasters Helper
 // @namespace    wikimasters.helper
-// @version      1.2.9
+// @version      1.2.11
 // @description  Affiche le prix moyen des cartes, tendances, halos de favoris/tags et aide à la décision sur le marketplace.
 // @match        https://www.wiki-masters.com/*
 // @grant        none
@@ -17,7 +17,7 @@
 (() => {
   'use strict';
 
-  const VERSION = '1.2.9';
+  const VERSION = '1.2.11';
 
   /* =========================================================
    *             INTERCEPTION FETCH (avant tout)
@@ -454,6 +454,10 @@
     return response.json();
   };
 
+  // Retourne :
+  //   - number   : prix trouvé
+  //   - null     : requête OK mais pas de ventes enregistrées
+  //   - undefined: erreur réseau, pas de données du tout
   const fetchPriceForCard = async (cardId, rarity, { signal, forceRefresh = false } = {}) => {
     const cached = getCachedPrice(cardId);
 
@@ -480,7 +484,7 @@
       return null;
     } catch (e) {
       if (e?.name === 'AbortError') throw e;
-      return cached?.price ?? null;
+      return cached?.price ?? undefined;
     }
   };
 
@@ -801,29 +805,62 @@
 
   /* =========================================================
    *             AFFICHAGE : BADGE DE PRIX (collection)
+   *             state : 'ok' | 'nosales' | 'error'
    * ========================================================= */
-  const showPriceBadge = (root, card, price) => {
+  const showPriceBadge = (root, card, price, state) => {
     const row = getStatsRow(root);
     if (!row) return;
 
     const cardId = card.card_id || card.id;
+    const rarity = card.card?.rarity || card.rarity || '';
+
+    // Détermine l'état si non fourni
+    if (!state) {
+      state = typeof price === 'number' ? 'ok' : 'nosales';
+    }
+
     const selector = `.wm-price-badge[data-card-id="${cardId}"]`;
     const existing = row.querySelector(selector);
 
-    const entry = STATE.priceCache[cardId];
-    const age = entry ? (Date.now() - entry.timestamp) : 0;
-    const freshStyle = getFreshnessStyle(age);
+    let freshStyle, trendInfo, title, displayValue;
 
-    const t24 = entry ? getTrend(cardId, CONFIG.TREND_WINDOWS.d1) : null;
-    const trendInfo = t24
-      ? classifyTrend(t24.deltaPct)
-      : { symbol: '—', color: '#9ca3af', label: null };
+    if (state === 'ok') {
+      const entry = STATE.priceCache[cardId];
+      const age = entry ? (Date.now() - entry.timestamp) : 0;
+      freshStyle = getFreshnessStyle(age);
 
-    const title = buildBadgeTitle(cardId, card);
+      const t24 = entry ? getTrend(cardId, CONFIG.TREND_WINDOWS.d1) : null;
+      trendInfo = t24
+        ? classifyTrend(t24.deltaPct)
+        : { symbol: '—', color: '#9ca3af', label: null };
 
+      title = buildBadgeTitle(cardId, card);
+      displayValue = formatNumber(price);
+    } else if (state === 'nosales') {
+      freshStyle = { bg: 'rgba(60,60,60,0.55)', border: 'rgba(120,120,120,0.65)' };
+      trendInfo = { symbol: '?', color: '#9ca3af', label: null };
+      displayValue = '—';
+      title = [
+        `Prix moyen${rarity ? ' • ' + rarity : ''} : aucune vente enregistrée`,
+        '',
+        'Clic droit pour réessayer'
+      ].join('\n');
+    } else {
+      // state === 'error'
+      freshStyle = { bg: 'rgba(220,38,38,0.55)', border: 'rgba(239,68,68,0.80)' };
+      trendInfo = { symbol: '!', color: '#ffffff', label: 'error' };
+      displayValue = '—';
+      title = [
+        `Prix moyen${rarity ? ' • ' + rarity : ''} : erreur de récupération`,
+        '',
+        'Vérifie ta connexion, ou clic droit pour réessayer.'
+      ].join('\n');
+    }
+
+    // --- Mise à jour ---
     if (existing && existing.querySelector('.wm-trend-symbol')) {
       const valueSpan = existing.querySelector('.wm-price-value');
-      if (valueSpan) valueSpan.textContent = formatNumber(price);
+      if (valueSpan) valueSpan.textContent = displayValue;
 
       const trendSpan = existing.querySelector('.wm-trend-symbol');
       if (trendSpan) {
@@ -835,6 +872,7 @@
       existing.style.background = freshStyle.bg;
       existing.style.borderColor = freshStyle.border;
       existing.title = title;
+      existing.dataset.state = state;
       return;
     }
 
@@ -845,6 +883,7 @@
     const badge = document.createElement('span');
     badge.className = 'wm-price-badge';
     badge.dataset.cardId = cardId;
+    badge.dataset.state = state;
     badge.title = title;
 
     badge.style.cssText = `
@@ -881,7 +920,7 @@
 
     const valueSpan = document.createElement('span');
     valueSpan.className = 'wm-price-value';
-    valueSpan.textContent = formatNumber(price);
+    valueSpan.textContent = displayValue;
 
     badge.append(trendSpan, valueSpan);
 
@@ -1136,10 +1175,13 @@
 
       if (typeof average === 'number') {
         setCachedPrice(cardId, average);
-        showPriceBadge(root, card, average);
+        showPriceBadge(root, card, average, 'ok');
+      } else {
+        showPriceBadge(root, card, null, 'nosales');
       }
     } catch (e) {
       console.warn('[Wikimasters Helper] Refresh manuel échoué:', e);
+      showPriceBadge(root, card, null, 'error');
     } finally {
       badge.classList.remove('wm-loading');
     }
@@ -1168,7 +1210,7 @@
     const cached = getCachedPrice(cardId);
 
     if (cached) {
-      showPriceBadge(root, card, cached.price);
+      showPriceBadge(root, card, cached.price, 'ok');
 
       const age = Date.now() - cached.timestamp;
       if (age > CONFIG.CACHE_REFRESH_AGE) {
@@ -1206,10 +1248,15 @@
           signal: controller.signal
         });
 
-        if (typeof average === 'number' &&
-            generation === STATE.collectionGeneration &&
-            root.isConnected) {
-          showPriceBadge(root, card, average);
+        if (generation === STATE.collectionGeneration && root.isConnected) {
+          if (typeof average === 'number') {
+            showPriceBadge(root, card, average, 'ok');
+          } else if (average === null) {
+            showPriceBadge(root, card, null, 'nosales');
+          } else {
+            // undefined = erreur réseau
+            showPriceBadge(root, card, null, 'error');
+          }
         }
 
         STATE.fetched.add(cardId);

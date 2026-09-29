@@ -32,6 +32,7 @@ Lis bien ce qui s'affiche.
 | `reset-cache.js` | Vide entièrement le cache (prix + historique) | Urgence |
 | `clear-trends.js` | Réinitialise uniquement l'historique des tendances (les prix sont conservés) | Debug |
 | `cache-migration.js` | One-shot : migration du cache v1.2.7 → v1.2.9 | One-shot |
+| `health-check.js` | Diagnostic rapide : version, CSS, cache, badges, halos, erreurs | Debug |
 
 ---
 
@@ -108,4 +109,21 @@ nouvelle clé `wikimasters-helper-cache`.
 - Une fois la migration faite, l'ancienne clé est supprimée
 - Si tu arrives sur le projet après la v1.2.9, **tu n'en as pas besoin**
 
+---
+### `health-check.js`
+
+Affiche dans la console un diagnostic complet de l'état du script :
+
+- Version affichée
+- CSS injecté (présence des règles de halo)
+- État du cache (nombre de cartes, taille, temps d'expiration restant)
+- Nombre de badges injectés (collection, marketplace, comparateurs)
+- Nombre de halos actifs
+- Erreurs de fetch en cours
+- Répartition des badges de prix par état (prix trouvé / pas de ventes / erreur)
+- Route actuelle
+
+À utiliser quand tu veux vérifier que tout fonctionne bien, ou pour
+diagnostiquer un comportement bizarre sans chercher manuellement dans la
+console.
 ---
