@@ -183,6 +183,7 @@ Le script maintient un cache local dans `localStorage` sous la clé
 ## Développement
 
 Les contributions, signalements de bugs et suggestions sont bienvenus.
+Voir [`docs/RELEASE.md`](docs/RELEASE.md) pour le workflow de publication.
 
 - **Signaler un bug ou proposer une amélioration** →
   [ouvrir une issue](https://github.com/nicof79/wikimasters-helper/issues)

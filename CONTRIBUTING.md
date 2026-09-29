@@ -93,6 +93,9 @@ Puis ouvre une Pull Request sur GitHub. Décris :
 - Les **tests** que tu as effectués
 - Les **captures d'écran** si ça touche à l'interface
 
+>💡 Pour comprendre comment une nouvelle version est publiée après
+> acceptation d'une PR, voir [`docs/RELEASE.md`](docs/RELEASE.md).
+
 ---
 
 ## Style de code
