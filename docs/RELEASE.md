@@ -91,29 +91,64 @@ git push origin main
 
 ---
 
-## 5. Créer la release GitHub
+## 5. Créer le tag Git
 
 ```bash
-# Créer et pousser le tag
 git tag -a vX.Y.Z -m "Version X.Y.Z"
 git push origin vX.Y.Z
 ```
 
-Puis sur GitHub :
-
-1. Onglet **Releases** → **Draft a new release**
-2. **Choose a tag** → sélectionner `vX.Y.Z`
-3. **Release title** → `vX.Y.Z`
-4. **Description** → copier le bloc `[X.Y.Z]` du CHANGELOG
-5. **Publish release**
+À ce stade, ton tag existe dans Git, mais **rien n'est encore visible**
+sur la page Releases de GitHub.
 
 ---
 
-## 6. Vérification post-release
+## 6. Créer la release GitHub
+
+> ⚠️ **Sans cette étape, les badges du README restent figés et les
+> utilisateurs ne voient pas la nouvelle version. Le tag seul ne suffit pas.**
+
+### Procédure
+
+1. Va sur `https://github.com/nicof79/wikimasters-helper/releases`
+2. Clique sur **Draft a new release**
+3. Dans **Choose a tag**, sélectionne le tag que tu viens de pousser (`vX.Y.Z`)
+4. **Release title** → `vX.Y.Z` (ou un titre court, ex. `v1.3.0 — Panneau de configuration`)
+5. **Description** → copie le bloc `[X.Y.Z]` du CHANGELOG
+6. **Publish release**
+
+### Cas particulier : plusieurs versions d'un coup
+
+Si tu as enchaîné plusieurs versions sans commiter entre les deux
+(ex. tu passes de 1.2.9 à 1.2.11 en une seule session), tu peux avoir
+**plusieurs tags sur le même commit**. C'est parfaitement valide.
+
+Dans ce cas :
+
+```bash
+# Un seul commit pour tout
+git commit -m "feat: ..."
+git push origin main
+
+# Plusieurs tags
+git tag -a v1.2.10 -m "Version 1.2.10 : ..."
+git tag -a v1.2.11 -m "Version 1.2.11 : ..."
+git push origin v1.2.10
+git push origin v1.2.11
+```
+
+Puis **une release par tag**, chacune avec son changelog.
+
+---
+
+## 7. Vérification post-release
 
 - [ ] Le badge **Version** du README affiche la nouvelle version
+      (peut prendre quelques minutes à se rafraîchir à cause du cache
+      shields.io)
 - [ ] Le badge **Release Date** est à jour
 - [ ] Le badge **Last Commit** est à jour
+- [ ] La page **Releases** du repo liste bien la nouvelle version
 - [ ] **Tester l'installation** : ouvrir le lien `raw.githubusercontent.com`
       dans un navigateur, vérifier que Tampermonkey propose bien la mise à jour
 - [ ] Si tu as des utilisateurs : les prévenir (Discord, forum, etc.)
@@ -134,7 +169,7 @@ Puis sur GitHub :
 - [ ] Commit avec préfixe conventionnel
 - [ ] Push sur `main`
 - [ ] Tag `vX.Y.Z` créé et poussé
-- [ ] Release GitHub publiée avec le changelog
+- [ ] **Release GitHub publiée** (pas juste le tag !)
 - [ ] Test de la mise à jour via Tampermonkey
 ```
 
@@ -146,10 +181,10 @@ Puis sur GitHub :
 |---|---|
 | Oublier d'incrémenter `@version` | Tampermonkey ne verra pas de mise à jour |
 | Oublier `const VERSION` | Le badge affiche l'ancienne version |
+| **Créer le tag sans la release** | Le badge README reste figé, la version n'apparaît pas |
 | Renommer la clé de cache sans migration | Les utilisateurs perdent leur historique |
 | Modifier le `@name` | Tampermonkey crée un 2ᵉ script au lieu de mettre à jour |
 | Pousser un commit cassé sur `main` | Tous les utilisateurs reçoivent le bug en <24h |
-| Oublier de créer la release | Les badges et le changelog ne s'affichent pas |
 
 ---
 
@@ -158,10 +193,10 @@ Puis sur GitHub :
 ### Correction urgente d'un bug en production
 
 1. Coder le fix, tester
-2. Bump **patch** (ex. 1.2.9 → 1.2.10)
+2. Bump **patch** (ex. 1.2.11 → 1.2.12)
 3. CHANGELOG : section `### Fixed` uniquement
 4. Commit `fix: ...`
-5. Tag + Release immédiats
+5. Tag + **Release** immédiats
 6. Les utilisateurs recevront la MAJ sous 24h
 
 ### Fonctionnalité expérimentale
@@ -208,6 +243,16 @@ Puis sur GitHub :
 2. Bump @version + const VERSION
 3. Mettre à jour CHANGELOG (+ README si besoin)
 4. Commit + push
-5. Tag + release GitHub
-6. Vérifier que la MAJ est détectée
+5. Tag Git + push du tag
+6. Créer la RELEASE GitHub (pas juste le tag !)
+7. Vérifier que la MAJ est détectée
 ```
+
+---
+
+## Liens utiles
+
+- [Releases du repo](https://github.com/nicof79/wikimasters-helper/releases)
+- [Conventional Commits](https://www.conventionalcommits.org/fr/)
+- [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/)
+- [Semantic Versioning](https://semver.org/lang/fr/)
