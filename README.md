@@ -36,58 +36,100 @@
 
 Un badge interactif s'affiche sous chaque carte de la collection et sous
 chaque enchère du marketplace. Il indique le prix moyen, l'ancienneté de
-la donnée (code couleur) et la tendance sur 24h.
+la donnée et la tendance sur 24h.
 
-Sur le marketplace, une comparaison directe avec la mise en cours est
-également disponible : `+1 500 sous la moyenne`, par exemple.
+![Aperçu collection](assets/preview-collection.png)
 
-![Aperçu collection](assets/preview-market.png)
+#### Trois états du badge
+
+Le badge peut prendre trois apparences distinctes selon la situation :
+
+| État | Apparence | Signification |
+|---|---|---|
+| **Prix trouvé** | Fond coloré + tendance (`▲` `▼` `=` `—`) | Prix moyen connu et fiable |
+| **Pas de ventes** | Fond gris neutre + `?` | Aucune vente enregistrée pour cette carte |
+| **Erreur** | Fond sombre + contour rouge + `!` | Impossible de récupérer le prix (réseau) |
+
+#### Code couleur selon la fraîcheur
+
+Pour un badge "prix trouvé", la couleur de fond indique l'âge de la
+donnée :
+
+| Couleur | Âge de la donnée |
+|---|---|
+| 🟢 Vert | Moins de 3h |
+| 🟡 Jaune | Entre 3h et 6h |
+| 🟠 Orange | Entre 6h et 12h |
+| 🔴 Rouge | Entre 12h et 24h |
+| 🟤 Bordeaux | Plus de 24h |
+
+#### Comparateur marketplace
+
+Sur la page marketplace (liste), le tooltip de chaque badge affiche une
+comparaison directe avec la mise en cours : `-1 500` (mise sous la
+moyenne, bonne affaire), `+300` (mise au-dessus, plus cher que la
+moyenne).
 
 ### Mise en valeur visuelle (halos)
 
 Un halo coloré entoure les cartes selon leur statut :
 
 - **Halo jaune** — carte marquée comme favorite
-- **Halo coloré** (couleur du tag) — carte taguée dans une collection
+- **Halo coloré** — carte taguée dans une collection, dans la couleur du
+  tag
 
-![Aperçu marketplace](assets/preview-collection.png)
+![Aperçu marketplace](assets/preview-market.png)
+
+> **Note** : en cas de multi-tag, la couleur utilisée est actuellement
+> celle du **premier tag** retourné par l'API. Une évolution est prévue
+> vers un halo multicolore (voir [`docs/TODO.md`](docs/TODO.md)).
 
 ### Aide à la décision sur le marché
 
-- Côté **acheteur** : comparateur en direct entre l'enchère courante et le
-  prix moyen, mis à jour au fur et à mesure de la saisie.
-- Côté **vendeur** : affichage du prix moyen pour t'aider à fixer ta mise
-  de départ.
+#### Côté acheteur
 
-### Cache et fiabilité
+Un comparateur affiche en permanence l'écart entre la mise saisie et le
+prix moyen. Tape un montant dans le champ de mise : la comparaison se
+recalcule instantanément à chaque frappe.
 
-- Stockage local (`localStorage`) pour réduire les requêtes API
-- Code couleur des badges selon la fraîcheur des données
-- **Trois états de badge** : prix trouvé (coloré), pas de ventes (`? —`, gris),
-  erreur de récupération (`! —`, rouge)
-- Gestion automatique du rate limit (backoff exponentiel)
-- Clic droit sur un badge pour forcer l'actualisation manuelle
+- `-1 500` en **vert** → ta mise est sous la moyenne, tu fais une bonne
+  affaire
+- `+300` en **rouge** → ta mise est au-dessus de la moyenne, tu payes
+  plus cher
+
+#### Côté vendeur
+
+Le prix moyen de la carte est affiché à côté du prix actuel pour t'aider
+à fixer ta mise de départ.
+
+### Cache et fiabilité données
+
+- **Stockage local** (`localStorage`) pour réduire les requêtes vers
+  l'API. Voir [Fonctionnement du cache](#fonctionnement-du-cache).
+- **Protection contre le rate limit** : si l'API répond trop souvent
+  `403` ou `429`, le script ralentit automatiquement le rythme de ses
+  requêtes, puis reprend sa vitesse normale dès que tout va bien. Si
+  trop d'erreurs consécutives s'accumulent, il s'arrête complètement
+  pour éviter un blocage prolongé côté serveur.
+- **Clic droit** sur n'importe quel badge pour forcer l'actualisation
+  manuelle.
 
 ---
 
 ## Installation
 
-### Prérequis
+1. Installe un gestionnaire de userscripts dans ton navigateur :
+   [Tampermonkey](https://www.tampermonkey.net/),
+   [Violentmonkey](https://violentmonkey.github.io/) ou
+   [Greasemonkey](https://www.greasespot.net/).
 
-Installe un gestionnaire de userscripts dans ton navigateur :
+2. Clique sur le lien d'installation :
 
-- [Tampermonkey](https://www.tampermonkey.net/) (recommandé)
-- [Violentmonkey](https://violentmonkey.github.io/)
-- [Greasemonkey](https://www.greasespot.net/)
+   **➜ [Installer Wikimasters Helper](https://raw.githubusercontent.com/nicof79/wikimasters-helper/main/wikimasters-helper.user.js)**
 
-### Installation du script
+3. La fenêtre du gestionnaire s'ouvre. Clique sur **Installer**.
 
-Clique sur le lien ci-dessous :
-
-**➜ [Installer Wikimasters Helper](https://raw.githubusercontent.com/nicof79/wikimasters-helper/main/wikimasters-helper.user.js)**
-
-La fenêtre de ton gestionnaire s'ouvre. Clique sur **Installer**, puis
-rafraîchis la page de Wikimasters.
+4. Rafraîchis la page de Wikimasters.
 
 ### Mises à jour
 
@@ -102,7 +144,7 @@ de ton gestionnaire → **Vérifier les mises à jour**.
 | Page | Ce que tu vois |
 |---|---|
 | `/collection` | Badge prix sous chaque carte + halos favoris/tags |
-| `/marketplace` | Badge prix sous chaque enchère + comparaison avec la mise |
+| `/marketplace` | Badge prix sous chaque enchère, avec comparaison dans le tooltip |
 | `/marketplace/{id}` | Comparateur live (acheteur) ou prix moyen (vendeur) |
 
 **Clic droit** sur un badge → force l'actualisation du prix.
@@ -116,7 +158,7 @@ rafraîchissement, tendances 24h et 7j.
 |---|---|
 | Symbole `▲`/`▼`/`=`/`—` + prix | Prix moyen connu, fraîcheur selon la couleur de fond |
 | `? —` sur fond gris | Aucune vente enregistrée pour cette carte |
-| `! —` sur fond rouge | Erreur de récupération (clic droit pour réessayer) |
+| `! —` sur fond sombre | Erreur de récupération (clic droit pour réessayer) |
 
 ---
 
@@ -124,27 +166,20 @@ rafraîchissement, tendances 24h et 7j.
 
 Le dossier [`tools/`](tools/) contient plusieurs snippets à coller dans la
 console DevTools pour gérer le cache (export, import, reset, statistiques,
-migration). Voir [`tools/README.md`](tools/README.md).
+migration) ainsi qu'un outil de diagnostic. Voir
+[`tools/README.md`](tools/README.md).
 
 ---
 
 ## Compatibilité
 
-### Navigateurs
-
-| Navigateur | Statut |
+| Cible | Statut |
 |---|---|
-| Firefox (dernière version) | ✅ Testé |
-| Chrome / Edge / Brave | ⚠️ Compatible (non testé) |
-| Safari | ⚠️ Compatible (non testé) |
-
-### Gestionnaires de userscripts
-
-| Gestionnaire | Statut |
-|---|---|
-| Tampermonkey | ✅ Testé |
-| Violentmonkey | ⚠️ Compatible (non testé) |
-| Greasemonkey | ⚠️ Compatible (non testé) |
+| Firefox + Tampermonkey | ✅ Testé |
+| Chrome / Edge / Brave + Tampermonkey | ⚠️ Compatible (non testé) |
+| Firefox + Violentmonkey | ⚠️ Compatible (non testé) |
+| Firefox + Greasemonkey | ⚠️ Compatible (non testé) |
+| Firefox mobile + Tampermonkey | ⚠️ Testé, problème d'affichage connu du badge de version |
 
 ---
 
@@ -153,17 +188,26 @@ migration). Voir [`tools/README.md`](tools/README.md).
 ```text
 wikimasters-helper/
 ├── assets/                          # Captures pour la documentation
-├── tools/                           # Snippets console (voir tools/README.md)
+│   ├── preview-collection.png
+│   └── preview-market.png
+├── docs/                            # Documentation technique
+│   ├── RELEASE.md                   # Workflow de publication
+│   └── TODO.md                      # Évolutions envisagées
+├── tools/                           # Snippets console
 │   ├── cache-migration.js
 │   ├── clear-trends.js
 │   ├── export-cache.js
+│   ├── health-check.js
 │   ├── import-cache.js
 │   ├── inspect-cache.js
 │   ├── reset-cache.js
 │   └── README.md
+├── .github/
+│   └── ISSUE_TEMPLATE/              # Templates d'issues GitHub
 ├── wikimasters-helper.user.js       # UserScript principal
 ├── .gitignore
 ├── CHANGELOG.md
+├── CONTRIBUTING.md
 ├── LICENSE
 └── README.md
 ```
@@ -176,10 +220,33 @@ Le script maintient un cache local dans `localStorage` sous la clé
 `wikimasters-helper-cache`. Pour chaque carte croisée, il stocke :
 
 - Le dernier prix moyen connu et son horodatage
-- Un historique des variations (100 points max par carte, un point tous les
-  6h minimum ou à chaque changement de prix)
+- Un historique des prix observés, utilisé pour calculer les tendances
 
-### Conséquences
+### Mécanique de rafraîchissement
+
+À chaque fois qu'une carte est croisée (sur la collection ou le
+marketplace) :
+
+| Âge du cache | Comportement |
+|---|---|
+| Moins de 6h | Le prix du cache est utilisé. Aucun appel réseau. |
+| Entre 6h et 24h | Le prix du cache est affiché instantanément, puis un rafraîchissement silencieux est lancé en arrière-plan. |
+| Plus de 24h | Le prix est considéré comme trop vieux pour être fiable. Un appel réseau complet est fait en bloquant. |
+
+### Historique des variations
+
+Pour chaque carte, le script enregistre **un point d'historique** : le
+prix moyen observé à un instant T. Un nouveau point n'est ajouté que si
+le prix a changé **ou** si plus de 6h se sont écoulées depuis le dernier
+point. Le but : ne pas saturer l'historique avec des valeurs identiques
+prises à quelques minutes d'intervalle.
+
+Chaque carte conserve au maximum **100 points**, ce qui correspond à
+plusieurs semaines de suivi pour une carte active, ou à quelques jours
+pour une carte très volatile. Au-delà, les points les plus anciens sont
+supprimés en premier.
+
+### À retenir
 
 - **Vider le cache** = perdre l'historique des tendances (les prix seront
   re-fetchés au prochain passage)
@@ -193,14 +260,16 @@ Le script maintient un cache local dans `localStorage` sous la clé
 ## Développement
 
 Les contributions, signalements de bugs et suggestions sont bienvenus.
-Voir [`docs/RELEASE.md`](docs/RELEASE.md) pour le workflow de publication.
 
 - **Signaler un bug ou proposer une amélioration** →
   [ouvrir une issue](https://github.com/nicof79/wikimasters-helper/issues)
 - **Contribuer au code** → créer un fork, une branche dédiée, puis une Pull
   Request
 
-Voir [`CHANGELOG.md`](CHANGELOG.md) pour l'historique des versions.
+Voir [`CHANGELOG.md`](CHANGELOG.md) pour l'historique des versions, et
+[`docs/RELEASE.md`](docs/RELEASE.md) pour le workflow de publication.
+Les évolutions envisagées sont listées dans
+[`docs/TODO.md`](docs/TODO.md).
 
 ---
 
@@ -209,3 +278,13 @@ Voir [`CHANGELOG.md`](CHANGELOG.md) pour l'historique des versions.
 Distribué sous licence [MIT](LICENSE).
 
 ---
+
+## Remerciements
+
+Ce script s'inspire de deux userscripts existants pour Wikimasters :
+
+- *WikiMasters - Affichage des prix moyens (KKH)*
+- *WikiMasters, Instant Price Check*
+
+Certaines idées et techniques d'injection (React Fiber, halos, file
+d'attente de requêtes) en sont directement inspirées et adaptées.
