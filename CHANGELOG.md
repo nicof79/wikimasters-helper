@@ -7,6 +7,23 @@ versionnage suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ---
 
+## [1.3.0] — 2026-10-03
+
+### Added
+- **Support mobile** : le script s'adapte aux petits écrans (moins de 768px)
+- Badge version déplacé en haut-gauche sur mobile (au lieu de bas-gauche)
+- **Popup tactile** : tap sur un badge ouvre une modale avec prix, date,
+  tendances et bouton "Rafraîchir"
+- **Refresh par appui long** (500ms) sur un badge, avec feedback visuel
+- Neutralisation de la sélection de texte et du menu contextuel natif sur
+  les badges pour une expérience tactile propre
+
+### Changed
+- Sur PC, le comportement reste inchangé (survol → tooltip, clic droit →
+  rafraîchissement)
+
+---
+
 ## [1.2.11] — 2026-09-30
 
 ### Added

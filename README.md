@@ -111,8 +111,8 @@ Le prix moyen de la carte est affiché à côté du prix actuel pour t'aider
   requêtes, puis reprend sa vitesse normale dès que tout va bien. Si
   trop d'erreurs consécutives s'accumulent, il s'arrête complètement
   pour éviter un blocage prolongé côté serveur.
-- **Clic droit** sur n'importe quel badge pour forcer l'actualisation
-  manuelle.
+- **Clic droit** (ou appui long sur mobile) sur n'importe quel badge
+  pour forcer l'actualisation manuelle.
 
 ---
 
@@ -147,18 +147,35 @@ de ton gestionnaire → **Vérifier les mises à jour**.
 | `/marketplace` | Badge prix sous chaque enchère, avec comparaison dans le tooltip |
 | `/marketplace/{id}` | Comparateur live (acheteur) ou prix moyen (vendeur) |
 
-**Clic droit** sur un badge → force l'actualisation du prix.
+### Interactions sur PC
 
-**Survol** d'un badge → tooltip avec prix exact, date du dernier
-rafraîchissement, tendances 24h et 7j.
+- **Survol** d'un badge → tooltip avec prix exact, date du dernier
+  rafraîchissement, tendances 24h et 7j.
+- **Clic droit** sur un badge → force l'actualisation du prix.
+- **Clic gauche** ailleurs sur la carte → comportement natif du jeu
+  (ouverture de la carte).
 
-**Interpréter un badge** :
+### Interactions sur mobile
+
+Le script détecte automatiquement les petits écrans (moins de 768px de
+large) et adapte son comportement.
+
+- **Tap** sur un badge → ouvre un popup avec le prix, la date, les
+  tendances, un bouton **Rafraîchir** et un bouton **✕**.
+- **Appui long** (500ms) sur un badge → force l'actualisation directe,
+  avec un feedback visuel.
+- **Tap ailleurs sur la carte** → comportement natif du jeu (ouverture
+  de la carte).
+- **Badge version** déplacé en haut-gauche pour ne pas se superposer au
+  menu du bas.
+
+### Interpréter un badge
 
 | Apparence | Signification |
 |---|---|
 | Symbole `▲`/`▼`/`=`/`—` + prix | Prix moyen connu, fraîcheur selon la couleur de fond |
 | `? —` sur fond gris | Aucune vente enregistrée pour cette carte |
-| `! —` sur fond sombre | Erreur de récupération (clic droit pour réessayer) |
+| `! —` sur fond sombre | Erreur de récupération (clic droit ou appui long pour réessayer) |
 
 ---
 
@@ -175,11 +192,11 @@ migration) ainsi qu'un outil de diagnostic. Voir
 
 | Cible | Statut |
 |---|---|
-| Firefox + Tampermonkey | ✅ Testé |
+| Firefox PC + Tampermonkey | ✅ Testé |
+| Firefox mobile + Tampermonkey | ✅ Testé |
 | Chrome / Edge / Brave + Tampermonkey | ⚠️ Compatible (non testé) |
 | Firefox + Violentmonkey | ⚠️ Compatible (non testé) |
 | Firefox + Greasemonkey | ⚠️ Compatible (non testé) |
-| Firefox mobile + Tampermonkey | ⚠️ Testé, problème d'affichage connu du badge de version |
 
 ---
 
@@ -278,13 +295,3 @@ Les évolutions envisagées sont listées dans
 Distribué sous licence [MIT](LICENSE).
 
 ---
-
-## Remerciements
-
-Ce script s'inspire de deux userscripts existants pour Wikimasters :
-
-- *WikiMasters - Affichage des prix moyens (KKH)*
-- *WikiMasters, Instant Price Check*
-
-Certaines idées et techniques d'injection (React Fiber, halos, file
-d'attente de requêtes) en sont directement inspirées et adaptées.

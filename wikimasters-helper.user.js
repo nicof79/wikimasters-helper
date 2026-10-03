@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wikimasters Helper
 // @namespace    wikimasters.helper
-// @version      1.2.11
+// @version      1.3.0
 // @description  Affiche le prix moyen des cartes, tendances, halos de favoris/tags et aide à la décision sur le marketplace.
 // @match        https://www.wiki-masters.com/*
 // @grant        none
@@ -17,7 +17,16 @@
 (() => {
   'use strict';
 
-  const VERSION = '1.2.11';
+  const VERSION = '1.3.0';
+
+  /* =========================================================
+   *             DÉTECTION DU SUPPORT
+   * =========================================================
+   * On aligne notre seuil sur celui du site : le menu passe à gauche
+   * en dessous de 768px, en bas à partir de 768px. On considère donc
+   * "mobile" tout ce qui est strictement inférieur à 768px.
+   */
+  const IS_MOBILE = window.matchMedia('(max-width: 767px)').matches;
 
   /* =========================================================
    *             INTERCEPTION FETCH (avant tout)
@@ -66,6 +75,9 @@
     BACKOFF_MULT: 2.2,
     RECOVERY_MULT: 0.9,
     MAX_CONSECUTIVE_LIMITS: 8,
+
+    // Durée de l'appui long (ms) sur mobile pour déclencher le refresh
+    LONG_PRESS_DURATION: 500,
 
     FRESHNESS_COLORS: [
       { maxAge: 3 * 60 * 60 * 1000,  bg: 'rgba(34,197,94,0.35)',  border: 'rgba(34,197,94,0.65)'  },
@@ -122,7 +134,10 @@
     marketplaceListProcessing: false,
     marketplaceListLastSearch: null,
 
-    noSalesRefresh: {}
+    noSalesRefresh: {},
+
+    // Popup mobile
+    mobilePopup: null
   };
 
   /* =========================================================
@@ -203,6 +218,151 @@
         user-select: none;
         letter-spacing: 0.3px;
       }
+
+      /* Sur mobile, le menu est en bas → on remonte le badge en haut. */
+      .wm-version-badge-mobile {
+        top: 8px;
+        bottom: auto;
+      }
+
+      /* Désactive la sélection de texte et le menu contextuel natif
+         sur les badges, pour rendre les interactions tactiles propres. */
+      .wm-price-badge,
+      .wm-market-list-badge {
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      /* Popup mobile (affichage des infos + refresh) */
+      .wm-mobile-popup-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.65);
+        z-index: 100000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
+        animation: wm-popup-fadein 0.15s ease-out;
+      }
+
+      @keyframes wm-popup-fadein {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+      }
+
+      .wm-mobile-popup-content {
+        background: #1a1a1a;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 14px;
+        padding: 20px;
+        max-width: 380px;
+        width: 100%;
+        color: #ffffff;
+        font: 500 14px/1.5 system-ui, sans-serif;
+        position: relative;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        animation: wm-popup-slidein 0.18s ease-out;
+      }
+
+      @keyframes wm-popup-slidein {
+        from { transform: translateY(10px) scale(0.98); opacity: 0; }
+        to   { transform: translateY(0) scale(1); opacity: 1; }
+      }
+
+      .wm-mobile-popup-close {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.08);
+        border: none;
+        color: #ffffff;
+        font-size: 18px;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+      }
+
+      .wm-mobile-popup-close:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
+
+      .wm-mobile-popup-title {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        opacity: 0.55;
+        margin: 0 0 6px 0;
+      }
+
+      .wm-mobile-popup-price {
+        font-size: 28px;
+        font-weight: 800;
+        color: #34d399;
+        margin: 0 0 16px 0;
+        line-height: 1;
+      }
+
+      .wm-mobile-popup-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        font-size: 13px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .wm-mobile-popup-row:last-of-type {
+        border-bottom: none;
+      }
+
+      .wm-mobile-popup-label {
+        opacity: 0.6;
+      }
+
+      .wm-mobile-popup-value {
+        font-weight: 600;
+        text-align: right;
+      }
+
+      .wm-mobile-popup-refresh {
+        margin-top: 16px;
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        background: rgba(52, 211, 153, 0.15);
+        color: #34d399;
+        font-weight: 700;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+
+      .wm-mobile-popup-refresh:hover,
+      .wm-mobile-popup-refresh:active {
+        background: rgba(52, 211, 153, 0.25);
+      }
+
+      .wm-mobile-popup-refresh:disabled {
+        opacity: 0.5;
+        cursor: wait;
+      }
+
+      .wm-mobile-popup-empty {
+        font-size: 14px;
+        opacity: 0.7;
+        padding: 8px 0 16px 0;
+      }
     `;
     (document.head || document.documentElement).appendChild(style);
   };
@@ -210,7 +370,7 @@
   const injectVersionBadge = () => {
     if (document.querySelector('.wm-version-badge')) return;
     const badge = document.createElement('div');
-    badge.className = 'wm-version-badge';
+    badge.className = 'wm-version-badge' + (IS_MOBILE ? ' wm-version-badge-mobile' : '');
     badge.textContent = `Wikimasters Helper • v${VERSION}`;
     document.body.appendChild(badge);
   };
@@ -454,10 +614,6 @@
     return response.json();
   };
 
-  // Retourne :
-  //   - number   : prix trouvé
-  //   - null     : requête OK mais pas de ventes enregistrées
-  //   - undefined: erreur réseau, pas de données du tout
   const fetchPriceForCard = async (cardId, rarity, { signal, forceRefresh = false } = {}) => {
     const cached = getCachedPrice(cardId);
 
@@ -804,6 +960,302 @@
     { present: false, color: null, text: null };
 
   /* =========================================================
+   *             POPUP MOBILE
+   * =========================================================
+   * Affiche une modale avec les infos du badge + bouton refresh.
+   * Se ferme par tap sur ✕ ou tap en dehors.
+   */
+  const closeMobilePopup = () => {
+    if (STATE.mobilePopup) {
+      STATE.mobilePopup.remove();
+      STATE.mobilePopup = null;
+    }
+  };
+
+  const buildMobilePopupContent = (cardId, card, rarity) => {
+    const entry = getCachedPrice(cardId);
+    const hasPrice = entry && typeof entry.price === 'number';
+
+    const container = document.createElement('div');
+    container.className = 'wm-mobile-popup-content';
+
+    // Bouton fermer
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'wm-mobile-popup-close';
+    closeBtn.type = 'button';
+    closeBtn.textContent = '✕';
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeMobilePopup();
+    });
+    container.appendChild(closeBtn);
+
+    // Titre
+    const title = document.createElement('p');
+    title.className = 'wm-mobile-popup-title';
+    title.textContent = `Prix moyen${rarity ? ' • ' + rarity : ''}`;
+    container.appendChild(title);
+
+    if (hasPrice) {
+      // Prix en gros
+      const priceEl = document.createElement('p');
+      priceEl.className = 'wm-mobile-popup-price';
+      priceEl.textContent = formatNumber(entry.price);
+      container.appendChild(priceEl);
+
+      // Date de refresh
+      const date = new Date(entry.timestamp);
+      const dateStr = date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const timeStr = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+      const rowDate = document.createElement('div');
+      rowDate.className = 'wm-mobile-popup-row';
+      const lblDate = document.createElement('span');
+      lblDate.className = 'wm-mobile-popup-label';
+      lblDate.textContent = 'Actualisé';
+      const valDate = document.createElement('span');
+      valDate.className = 'wm-mobile-popup-value';
+      valDate.textContent = `${dateStr} à ${timeStr} (${formatAge(Date.now() - entry.timestamp)})`;
+      rowDate.append(lblDate, valDate);
+      container.appendChild(rowDate);
+
+      // Tendance 24h
+      const t24 = getTrend(cardId, CONFIG.TREND_WINDOWS.d1);
+      const row24 = document.createElement('div');
+      row24.className = 'wm-mobile-popup-row';
+      const lbl24 = document.createElement('span');
+      lbl24.className = 'wm-mobile-popup-label';
+      lbl24.textContent = 'Tendance 24h';
+      const val24 = document.createElement('span');
+      val24.className = 'wm-mobile-popup-value';
+      if (t24) {
+        const c = classifyTrend(t24.deltaPct);
+        const sign = t24.deltaPct >= 0 ? '+' : '';
+        val24.textContent = `${c.symbol} ${sign}${t24.deltaPct.toFixed(1)} %`;
+        val24.style.color = c.color;
+      } else {
+        val24.textContent = '—';
+        val24.style.opacity = '0.5';
+      }
+      row24.append(lbl24, val24);
+      container.appendChild(row24);
+
+      // Tendance 7j
+      const t7d = getTrend(cardId, CONFIG.TREND_WINDOWS.d7);
+      const row7d = document.createElement('div');
+      row7d.className = 'wm-mobile-popup-row';
+      const lbl7d = document.createElement('span');
+      lbl7d.className = 'wm-mobile-popup-label';
+      lbl7d.textContent = 'Tendance 7j';
+      const val7d = document.createElement('span');
+      val7d.className = 'wm-mobile-popup-value';
+      if (t7d) {
+        const c = classifyTrend(t7d.deltaPct);
+        const sign = t7d.deltaPct >= 0 ? '+' : '';
+        val7d.textContent = `${c.symbol} ${sign}${t7d.deltaPct.toFixed(1)} %`;
+        val7d.style.color = c.color;
+      } else {
+        val7d.textContent = '—';
+        val7d.style.opacity = '0.5';
+      }
+      row7d.append(lbl7d, val7d);
+      container.appendChild(row7d);
+    } else {
+      // Pas de ventes
+      const empty = document.createElement('p');
+      empty.className = 'wm-mobile-popup-empty';
+      empty.textContent = 'Aucune vente enregistrée pour cette carte.';
+      container.appendChild(empty);
+    }
+
+    // Bouton rafraîchir
+    const refreshBtn = document.createElement('button');
+    refreshBtn.className = 'wm-mobile-popup-refresh';
+    refreshBtn.type = 'button';
+    refreshBtn.textContent = 'Rafraîchir';
+    refreshBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      refreshBtn.disabled = true;
+      refreshBtn.textContent = 'Actualisation...';
+
+      try {
+        await doForceRefresh(cardId, card, rarity);
+      } catch (err) {
+        console.warn('[Wikimasters Helper] Refresh popup échoué:', err);
+      }
+
+      // Rouvre le popup avec les données fraîches
+      closeMobilePopup();
+      openMobilePopup(cardId, card, rarity);
+    });
+    container.appendChild(refreshBtn);
+
+    return container;
+  };
+
+  const openMobilePopup = (cardId, card, rarity) => {
+    closeMobilePopup();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'wm-mobile-popup-overlay';
+
+    // Fermer en tapant en dehors
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeMobilePopup();
+    });
+
+    const content = buildMobilePopupContent(cardId, card, rarity);
+    overlay.appendChild(content);
+
+    document.body.appendChild(overlay);
+    STATE.mobilePopup = overlay;
+  };
+
+  /* =========================================================
+   *             REFRESH MANUEL (partagé)
+   * =========================================================
+   * Effectue un fetch forcé et met à jour le cache.
+   * Retourne true si un prix a été trouvé, false sinon.
+   */
+  const doForceRefresh = async (cardId, card, rarity) => {
+    const data = await fetchJson(`/api/marketplace/cards/${cardId}/sales?scope=summary`);
+    const average = data?.summary?.[rarity]?.average
+      ?? Object.values(data?.summary || {})[0]?.average;
+
+    if (typeof average === 'number') {
+      setCachedPrice(cardId, average);
+      return true;
+    }
+    return false;
+  };
+
+  /* =========================================================
+   *             INTERACTIONS BADGE (mutualisées)
+   * =========================================================
+   * Attache les handlers selon le support :
+   *  - Mobile : tap → popup, appui long → refresh direct
+   *  - Desktop : mousedown/click neutralisés, contextmenu → refresh
+   *
+   * Le paramètre `onRefreshDone` permet au contexte marketplace de
+   * re-render son propre badge après le refresh.
+   */
+  const attachBadgeInteractions = (badge, opts) => {
+    const {
+      cardId,
+      card,
+      rarity,
+      isMarketplace = false,
+      onRefreshDone = null
+    } = opts;
+
+    if (IS_MOBILE) {
+      let longPressTimer = null;
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let triggered = false;
+
+      badge.addEventListener('touchstart', (e) => {
+        triggered = false;
+        const touch = e.touches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+
+        longPressTimer = setTimeout(async () => {
+          triggered = true;
+          badge.classList.add('wm-loading');
+          try {
+            const hasPrice = await doForceRefresh(cardId, card, rarity);
+            if (onRefreshDone) {
+              onRefreshDone(hasPrice);
+            } else {
+              showPriceBadge(badge.closest('[data-wm-root]') || badge.parentElement, card, hasPrice ? STATE.priceCache[cardId].price : null, hasPrice ? 'ok' : 'nosales');
+            }
+          } catch (err) {
+            console.warn('[Wikimasters Helper] Appui long refresh échoué:', err);
+            if (!onRefreshDone) {
+              showPriceBadge(badge.closest('[data-wm-root]') || badge.parentElement, card, null, 'error');
+            }
+          } finally {
+            badge.classList.remove('wm-loading');
+          }
+        }, CONFIG.LONG_PRESS_DURATION);
+      }, { passive: true });
+
+      badge.addEventListener('touchmove', (e) => {
+        if (!longPressTimer) return;
+        const touch = e.touches[0];
+        const dx = Math.abs(touch.clientX - touchStartX);
+        const dy = Math.abs(touch.clientY - touchStartY);
+        if (dx > 10 || dy > 10) {
+          clearTimeout(longPressTimer);
+          longPressTimer = null;
+        }
+      }, { passive: true });
+
+      badge.addEventListener('touchend', (e) => {
+        if (longPressTimer) {
+          clearTimeout(longPressTimer);
+          longPressTimer = null;
+
+          // Si l'appui long n'a pas été déclenché → tap simple
+          if (!triggered) {
+            e.preventDefault();
+            e.stopPropagation();
+            openMobilePopup(cardId, card, rarity);
+          }
+        }
+      });
+
+      badge.addEventListener('touchcancel', () => {
+        if (longPressTimer) {
+          clearTimeout(longPressTimer);
+          longPressTimer = null;
+        }
+      });
+
+      // Empêche le menu contextuel natif (au cas où)
+      badge.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+
+    } else {
+      // Desktop : comportement historique
+      badge.addEventListener('mousedown', (e) => e.stopPropagation());
+      badge.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      });
+      badge.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (isMarketplace) {
+          // Contexte marketplace : handler asynchrone dédié
+          const start = Date.now();
+          badge.classList.add('wm-loading');
+          doForceRefresh(cardId, card, rarity)
+            .then((hasPrice) => {
+              const elapsed = Date.now() - start;
+              const wait = Math.max(0, 400 - elapsed);
+              setTimeout(() => {
+                if (onRefreshDone) onRefreshDone(hasPrice);
+                badge.classList.remove('wm-loading');
+              }, wait);
+            })
+            .catch((err) => {
+              console.warn('[Wikimasters Helper] Refresh marketplace échoué:', err);
+              badge.classList.remove('wm-loading');
+            });
+        } else {
+          // Contexte collection : refresh direct
+          handleManualRefresh(cardId, badge.closest('[data-wm-root]') || badge.parentElement, card);
+        }
+      });
+    }
+  };
+
+  /* =========================================================
    *             AFFICHAGE : BADGE DE PRIX (collection)
    *             state : 'ok' | 'nosales' | 'error'
    * ========================================================= */
@@ -814,7 +1266,6 @@
     const cardId = card.card_id || card.id;
     const rarity = card.card?.rarity || card.rarity || '';
 
-    // Détermine l'état si non fourni
     if (!state) {
       state = typeof price === 'number' ? 'ok' : 'nosales';
     }
@@ -846,7 +1297,6 @@
         'Clic droit pour réessayer'
       ].join('\n');
     } else {
-      // state === 'error'
       freshStyle = { bg: 'rgba(220,38,38,0.55)', border: 'rgba(239,68,68,0.80)' };
       trendInfo = { symbol: '!', color: '#ffffff', label: 'error' };
       displayValue = '—';
@@ -857,7 +1307,6 @@
       ].join('\n');
     }
 
-    // --- Mise à jour ---
     if (existing && existing.querySelector('.wm-trend-symbol')) {
       const valueSpan = existing.querySelector('.wm-price-value');
       if (valueSpan) valueSpan.textContent = displayValue;
@@ -924,15 +1373,11 @@
 
     badge.append(trendSpan, valueSpan);
 
-    badge.addEventListener('mousedown', (e) => e.stopPropagation());
-    badge.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-    });
-    badge.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      handleManualRefresh(cardId, root, card);
+    attachBadgeInteractions(badge, {
+      cardId,
+      card,
+      rarity,
+      isMarketplace: false
     });
 
     row.appendChild(badge);
@@ -1018,7 +1463,6 @@
       ].join('\n');
     }
 
-    // === Mise à jour si déjà présent ===
     const existing = item.querySelector('.wm-market-list-badge');
     if (existing) {
       const valueSpan = existing.querySelector('.wm-market-list-value');
@@ -1037,7 +1481,6 @@
       return;
     }
 
-    // === Création ===
     const badge = document.createElement('span');
     badge.className = 'wm-market-list-badge';
     badge.title = title;
@@ -1078,48 +1521,28 @@
 
     badge.append(trendSpan, valueSpan);
 
-    badge.addEventListener('mousedown', (e) => e.stopPropagation());
-    badge.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-    });
-    badge.addEventListener('contextmenu', async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      badge.classList.add('wm-loading');
-
-      const start = Date.now();
-
-      try {
-        const data = await fetchJson(`/api/marketplace/cards/${cardId}/sales?scope=summary`);
-        const avg = data?.summary?.[rarity]?.average
-          ?? Object.values(data?.summary || {})[0]?.average;
-
-        const elapsed = Date.now() - start;
-        if (elapsed < 400) await sleep(400 - elapsed);
-
-        if (typeof avg === 'number') {
-          setCachedPrice(cardId, avg);
-          delete STATE.noSalesRefresh[cardId];
-          renderMarketplaceListBadge(item, auction, avg, currentBid, rarity);
-          flashMarketBadge(item, 'rgba(34,197,94,1)');
-        } else {
-          STATE.noSalesRefresh[cardId] = Date.now();
-          renderMarketplaceListBadge(item, auction, null, currentBid, rarity);
-          flashMarketBadge(item, 'rgba(234,179,8,1)');
-        }
-      } catch (err) {
-        console.warn('[Wikimasters Helper] Refresh manuel marketplace échoué:', err);
-        const elapsed = Date.now() - start;
-        if (elapsed < 400) await sleep(400 - elapsed);
-        flashMarketBadge(item, 'rgba(239,68,68,1)');
-      } finally {
-        badge.classList.remove('wm-loading');
+    // Callback commun après refresh (utilisé aussi bien sur mobile que desktop)
+    const onRefreshDone = (hasPrice) => {
+      const newAvg = hasPrice ? STATE.priceCache[cardId]?.price : null;
+      if (typeof newAvg === 'number') {
+        delete STATE.noSalesRefresh[cardId];
+        renderMarketplaceListBadge(item, auction, newAvg, currentBid, rarity);
+        flashMarketBadge(item, 'rgba(34,197,94,1)');
+      } else {
+        STATE.noSalesRefresh[cardId] = Date.now();
+        renderMarketplaceListBadge(item, auction, null, currentBid, rarity);
+        flashMarketBadge(item, 'rgba(234,179,8,1)');
       }
+    };
+
+    attachBadgeInteractions(badge, {
+      cardId,
+      card: { card_id: cardId, rarity },
+      rarity,
+      isMarketplace: true,
+      onRefreshDone
     });
 
-    // === Insertion ===
     const priceRow = item.querySelector('.w-full.flex.items-center.justify-between.gap-2.text-xs');
     if (priceRow && priceRow.parentElement) {
       priceRow.parentElement.insertBefore(badge, priceRow.nextSibling);
@@ -1156,7 +1579,7 @@
   };
 
   /* =========================================================
-   *             REFRESH MANUEL (collection)
+   *             REFRESH MANUEL (collection, desktop)
    * ========================================================= */
   const handleManualRefresh = async (cardId, root, card) => {
     const badge = root.querySelector(`.wm-price-badge[data-card-id="${cardId}"]`);
@@ -1167,15 +1590,10 @@
 
     try {
       const rarity = card.card?.rarity || card.rarity;
-      const data = await fetchJson(
-        `/api/marketplace/cards/${cardId}/sales?scope=summary`
-      );
-      const average = data?.summary?.[rarity]?.average
-        ?? Object.values(data?.summary || {})[0]?.average;
+      const hasPrice = await doForceRefresh(cardId, card, rarity);
 
-      if (typeof average === 'number') {
-        setCachedPrice(cardId, average);
-        showPriceBadge(root, card, average, 'ok');
+      if (hasPrice) {
+        showPriceBadge(root, card, STATE.priceCache[cardId].price, 'ok');
       } else {
         showPriceBadge(root, card, null, 'nosales');
       }
@@ -1254,7 +1672,6 @@
           } else if (average === null) {
             showPriceBadge(root, card, null, 'nosales');
           } else {
-            // undefined = erreur réseau
             showPriceBadge(root, card, null, 'error');
           }
         }
@@ -1956,6 +2373,7 @@
     cleanupCollectionMode();
     cleanupMarketplaceMode();
     cleanupMarketplaceListMode();
+    closeMobilePopup();
   };
 
   const getRouteKind = (pathname) => {
@@ -1984,7 +2402,6 @@
     }
 
     const kind = getRouteKind(pathname);
-    console.log('[Wikimasters Helper] Route:', pathname, '→', kind);
 
     if (kind === 'collection') {
       startCollectionMode();
@@ -2041,7 +2458,6 @@
     injectStyles();
     injectVersionBadge();
     handleRouteChange(true);
-    console.log(`[Wikimasters Helper] V${VERSION} initialisé ✓`);
   };
 
   if (document.readyState === 'loading') {
