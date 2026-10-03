@@ -1,283 +1,308 @@
-# TODO — Évolutions envisagées
+# Wikimasters Helper
 
-Ce document liste les idées, améliorations et corrections envisagées pour
-les prochaines versions de Wikimasters Helper.
+> UserScript Tampermonkey qui enrichit l'interface du jeu par navigateur
+> [Wikimasters](https://www.wiki-masters.com/) : prix moyens, tendances,
+> halos de favoris/tags et aide à la décision sur le marché.
 
-Rien n'est engageant : chaque item peut être priorisé, reporté ou
-abandonné selon l'usage réel et les retours.
+[![GitHub release](https://img.shields.io/github/v/release/nicof79/wikimasters-helper?logo=github&style=plastic&label=Version)](https://github.com/nicof79/wikimasters-helper/releases)
+[![Release Date](https://img.shields.io/github/release-date/nicof79/wikimasters-helper?logo=github&style=plastic)](https://github.com/nicof79/wikimasters-helper/releases)
+[![Last Commit](https://img.shields.io/github/last-commit/nicof79/wikimasters-helper?logo=github&style=plastic)](https://github.com/nicof79/wikimasters-helper/commits/main)
+[![License](https://img.shields.io/github/license/nicof79/wikimasters-helper?logo=github&style=plastic)](https://github.com/nicof79/wikimasters-helper/blob/main/LICENSE)
+[![Language](https://img.shields.io/github/languages/top/nicof79/wikimasters-helper?logo=javascript&style=plastic)](https://github.com/nicof79/wikimasters-helper)
+[![Issues](https://img.shields.io/github/issues/nicof79/wikimasters-helper?logo=github&style=plastic)](https://github.com/nicof79/wikimasters-helper/issues)
 
----
-
-## 🔴 Prioritaire
-
-### Compatibilité mobile — dernier reliquat
-
-Le support mobile (badge version déplacé, tap → popup, appui long →
-refresh) a été livré en **v1.3.0**. Le chevauchement du badge version sur
-Firefox mobile est résolu.
-
-Reste un point à vérifier :
-
-- [ ] **Taille des badges sur écrans très petits** (< 400px de large).
-      À observer concrètement :
-  - Le badge tient-il dans la largeur de la carte sans déborder ?
-  - Le prix reste-t-il lisible (police actuelle en 11px) ?
-  - Le badge masque-t-il la zone ATK/DEF de manière gênante ?
-  
-  Si les 3 points sont OK → retirer ce TODO. Sinon → ajuster padding,
-  taille de police ou position.
+[![Installer Wikimasters Helper](https://img.shields.io/badge/Installer-Tampermonkey-ff6b35?style=for-the-badge&logo=tampermonkey)](https://raw.githubusercontent.com/nicof79/wikimasters-helper/main/wikimasters-helper.user.js)
 
 ---
 
-## 🟡 À investiguer / En cours de cadrage
+## Sommaire
 
-### 📦 Prix à l'ouverture des paquets
-
-**Objectif** : Afficher le prix moyen de **chaque carte obtenue** lors de
-l'ouverture d'un paquet, pour savoir immédiatement si on a tiré quelque
-chose de valeur.
-
-**Contexte & Précisions** :
-- Les cartes s'affichent **une par une** (pas toutes d'un coup).
-- Pas de prix d'achat (paquets gratuits toutes les 10 min).
-- **Périmètre retenu** : Uniquement le prix à côté de chaque carte au fur
-  et à mesure qu'elle apparaît. Pas de récapitulatif en fin d'ouverture.
-- **Bénéfice secondaire** : Les prix récupérés sont ajoutés au cache et
-  seront disponibles plus tard dans la collection ou le marketplace.
-
-**Endpoint identifié** : `/api/packs/open` (POST, payload vide — la
-session identifie le joueur).
-
-**Réponse contient** :
-- `cards: [...]` : les cartes obtenues avec `id`, `rarity`, `atk`, `def`,
-  `wikipedia_title`, `image_url`
-- `packs_remaining` : nombre de paquets restants
-- `packs_last_regen_at` : timestamp de régénération
-- `owned_copies` : exemplaires possédés avec `starred`, `is_shiny`,
-  `user_card_tags`
-
-**Implémentation envisagée** :
-1. Intercepter la réponse de `/api/packs/open` (le `fetch` est déjà
-   intercepté pour détecter les recherches marketplace)
-2. Récupérer les `card_id` des cartes obtenues
-3. Fetch les prix moyens (depuis le cache ou l'API)
-4. Afficher le prix à côté de chaque carte pendant l'animation
-
-**À investiguer** :
-- Structure DOM lors de l'animation de révélation (chaque carte apparaît
-  séquentiellement ? d'un coup ?)
-- Timing : où placer le prix pour ne pas rater la carte ?
-
-### 🎨 Interface — Badge version (refonte)
-
-**Objectif** : remplacer le badge version actuel (texte simple fixé en
-bas-gauche) par un badge cliquable inspiré du style du bouton Wikibidou
-du site.
-
-**Spécifications finales** :
-- **Position** : haut-gauche, centré dans la colonne sur PC ; haut-gauche
-  sur mobile (comportement déjà en place depuis v1.3.0)
-- **Style** : inspiré du bouton Wikibidou (`bg: var(--color-surface)/90`,
-  `text: var(--color-accent)`, arrondi, padding compact `px-2 py-1`,
-  police `text-xs font-semibold`)
-- **Contenu** : `WMH - vX.Y.Z` (texte simple, sans icône)
-- **Interaction** : au clic → ouvre une modale "What's new"
-
-**À implémenter** : parsing du `CHANGELOG.md` depuis
-`raw.githubusercontent.com` pour afficher les 3 dernières versions dans la
-modale.
-
-### 🃏 Interface — Overlay au survol & historique enrichi
-
-**Objectif** : remplacer le tooltip natif actuel par un overlay enrichi
-qui recouvre la carte.
-
-**Contenu retenu** :
-- Prix moyen et sa fraîcheur
-- Date du dernier rafraîchissement
-- Tendances 24h et 7j
-- **Les 7 derniers prix enregistrés** dans l'historique (avec date)
-- Comparaison avec la mise (sur marketplace)
-
-**Design à concevoir** :
-- Sur PC : overlay au survol, type "recto de carte" avec fond coloré
-- Sur mobile : enrichir le popup tactile existant
-
-**Contraintes** : conflits avec le clic sur la carte, performance sur une
-grille de 50 cartes, lisibilité.
-
-### 📊 Statistiques de collection (simplifié via API)
-
-**Objectif** : afficher des statistiques sur la collection personnelle.
-
-**Endpoint identifié** : `/api/my-collection/stats?sort=rarity` fournit
-**déjà côté serveur** :
-- Nombre total de cartes
-- Répartition par rareté (`rarityCounts`)
-- Répartition par tag (`tagOptions` avec `cardCount`)
-
-**Note** : les paramètres `sort=category` et `sort=tag` renvoient les
-mêmes données. Pas de répartition par catégorie côté serveur.
-
-**À calculer nous-mêmes** (avec les prix du cache) :
-- Valeur totale de la collection
-- Top des cartes les plus chères
-- Nombre de doublons (via `/api/my-collection` complet)
-
-**Attention** : la collection fait actuellement **3734 cartes**. Le calcul
-de la valeur totale nécessite les prix de toutes les cartes → le cache
-met du temps à se remplir. Prévoir un affichage progressif.
-
-**À trancher** :
-- Emplacement (panneau bas de page, modale via le badge version, page
-  dédiée ?)
-
-### 🎨 Interface — Badges & Halos (petits raffinements)
-
-- [ ] **Uniformiser la position des badges** entre la collection et le
-      marketplace. (Centré au-dessus d'ATK/DEF sur la collection, mais
-      sous la carte sur le marketplace liste. Objectif : cohérence
-      visuelle).
-- [ ] **Distinguer visuellement "prix très vieux" et "pas de ventes"** :
-  - Prix > 24h : fond bordeaux `#551a3b`
-  - Pas de ventes : gris neutre conservé
-  - Erreur : fond sombre avec contour rouge marqué
-- [ ] **Indicateur visuel discret de l'état du rate limit** dans la page
-      (type voyant vert/orange/rouge) pour signaler si le script
-      ralentit ses requêtes.
-- [ ] **Halo multicolore pour les cartes multi-tag**. Aujourd'hui, seul
-      le premier tag est utilisé. Proposition principale : un halo en
-      `conic-gradient` avec toutes les couleurs de tag réparties.
-      Solution de repli : animation de rotation cyclique.
-
-### 🏷️ Marketplace — Comparateur
-
-- [ ] **Bouton "Utiliser suggestion : moyenne -10 %"** côté vendeur. Au
-      lieu de pré-remplir le champ (risque de validation accidentelle),
-      afficher un bouton cliquable qui insère la valeur suggérée.
+- [Fonctionnalités](#fonctionnalités)
+- [Installation](#installation)
+- [Utilisation](#utilisation)
+- [Outils annexes](#outils-annexes)
+- [Compatibilité](#compatibilité)
+- [Structure du projet](#structure-du-projet)
+- [Fonctionnement du cache](#fonctionnement-du-cache)
+- [Développement](#développement)
+- [Licence](#licence)
+- [Remerciements](#remerciements)
 
 ---
 
-## 🟢 Plus tard (Roadmap secondaire)
+## Fonctionnalités
 
-### 🔍 Raccourcis de recherche
+### Prix moyens et tendances
 
-**Objectif** : Enregistrer des recherches favorites sur le marketplace et
-les relancer en un clic (ex: bouton "Deux-Sèvres").
+Un badge interactif s'affiche sous chaque carte de la collection et sous
+chaque enchère du marketplace. Il indique le prix moyen, l'ancienneté de
+la donnée et la tendance sur 24h.
 
-- **Emplacement envisagé** : Panneau flottant *(à rediscuter lors de la
-  réalisation)*.
-- **Périmètre par étapes** :
-  1. Mots-clés uniquement.
-  2. Filtres plus complexes par la suite (rareté, fourchette de prix, etc.).
-- **À trancher** : Interface de création/suppression, persistance
-  (stockage local), nombre max de raccourcis.
+![Aperçu collection](assets/preview-collection.png)
 
-### 📈 Infos joueur & succès
+#### Trois états du badge
 
-**Endpoints identifiés** :
-- `/api/profile/{username}` → infos basiques (pas de niveau ni stats)
-- `/api/achievements/check` → POST, pas exploitable en l'état
+Le badge peut prendre trois apparences distinctes selon la situation :
 
-**Piste** : chercher d'autres endpoints liés au profil pour enrichir
-l'interface (niveau, progression, succès débloqués).
+| État | Apparence | Signification |
+|---|---|---|
+| **Prix trouvé** | Fond coloré + tendance (`▲` `▼` `=` `—`) | Prix moyen connu et fiable |
+| **Pas de ventes** | Fond gris neutre + `?` | Aucune vente enregistrée pour cette carte |
+| **Erreur** | Fond sombre + contour rouge + `!` | Impossible de récupérer le prix (réseau) |
+
+#### Code couleur selon la fraîcheur
+
+Pour un badge "prix trouvé", la couleur de fond indique l'âge de la
+donnée :
+
+| Couleur | Âge de la donnée |
+|---|---|
+| 🟢 Vert | Moins de 3h |
+| 🟡 Jaune | Entre 3h et 6h |
+| 🟠 Orange | Entre 6h et 12h |
+| 🔴 Rouge | Entre 12h et 24h |
+| 🟤 Bordeaux | Plus de 24h |
+
+#### Comparateur marketplace
+
+Sur la page marketplace (liste), le tooltip de chaque badge affiche une
+comparaison directe avec la mise en cours : `-1 500` (mise sous la
+moyenne, bonne affaire), `+300` (mise au-dessus, plus cher que la
+moyenne).
+
+### Mise en valeur visuelle (halos)
+
+Un halo coloré entoure les cartes selon leur statut :
+
+- **Halo jaune** — carte marquée comme favorite
+- **Halo coloré** — carte taguée dans une collection, dans la couleur du
+  tag
+
+![Aperçu marketplace](assets/preview-market.png)
+
+> **Note** : en cas de multi-tag, la couleur utilisée est actuellement
+> celle du **premier tag** retourné par l'API. Une évolution est prévue
+> vers un halo multicolore (voir [`docs/TODO.md`](docs/TODO.md)).
+
+### Aide à la décision sur le marché
+
+#### Côté acheteur
+
+Un comparateur affiche en permanence l'écart entre la mise saisie et le
+prix moyen. Tape un montant dans le champ de mise : la comparaison se
+recalcule instantanément à chaque frappe.
+
+- `-1 500` en **vert** → ta mise est sous la moyenne, tu fais une bonne
+  affaire
+- `+300` en **rouge** → ta mise est au-dessus de la moyenne, tu payes
+  plus cher
+
+#### Côté vendeur
+
+Le prix moyen de la carte est affiché à côté du prix actuel pour t'aider
+à fixer ta mise de départ.
+
+### Badge version & nouveautés
+
+En haut à gauche de l'interface, un badge discret `WMH - vX.Y.Z` indique
+la version actuelle du script.
+
+Clique dessus pour ouvrir une modale **"Nouveautés"** qui affiche les
+3 dernières versions publiées, avec leurs changements respectifs. Le
+contenu est lu directement depuis le `CHANGELOG.md` du projet.
+
+### Cache et fiabilité données
+
+- **Stockage local** (`localStorage`) pour réduire les requêtes vers
+  l'API. Voir [Fonctionnement du cache](#fonctionnement-du-cache).
+- **Protection contre le rate limit** : si l'API répond trop souvent
+  `403` ou `429`, le script ralentit automatiquement le rythme de ses
+  requêtes, puis reprend sa vitesse normale dès que tout va bien. Si
+  trop d'erreurs consécutives s'accumulent, il s'arrête complètement
+  pour éviter un blocage prolongé côté serveur.
+- **Clic droit** (ou appui long sur mobile) sur n'importe quel badge
+  pour forcer l'actualisation manuelle.
 
 ---
 
-## 💡 Idées en vrac (À creuser ou abandonner)
+## Installation
 
-- Notification visuelle quand une carte possédée franchit un seuil de
-  tendance (ex: +20 % en 24h).
-- Comparateur de possession entre joueurs (si l'API le permet).
-- Filtres visuels sur la collection selon les paliers de prix.
-- Afficher le nombre de paquets restants dans le badge version
-  (`/api/packs/open` retourne `packs_remaining` et
-  `packs_last_regen_at`).
-- Afficher le nombre d'enchères en cours dans le badge version
-  (`/api/marketplace/mine` retourne `sellingCount` et
-  `maxConcurrentAuctions`).
+1. Installe un gestionnaire de userscripts dans ton navigateur :
+   [Tampermonkey](https://www.tampermonkey.net/),
+   [Violentmonkey](https://violentmonkey.github.io/) ou
+   [Greasemonkey](https://www.greasespot.net/).
 
----
+2. Clique sur le lien d'installation :
 
-## 🔌 Inventaire des endpoints API découverts
+   **➜ [Installer Wikimasters Helper](https://raw.githubusercontent.com/nicof79/wikimasters-helper/main/wikimasters-helper.user.js)**
 
-Ces endpoints ont été identifiés par inspection du trafic réseau du site.
-Utiles pour de futures fonctionnalités.
+3. La fenêtre du gestionnaire s'ouvre. Clique sur **Installer**.
 
-| Endpoint | Méthode | Contenu | Exploité ? |
-|---|---|---|---|
-| `/api/my-collection` | GET | Liste paginée de la collection | ✅ Cache prix |
-| `/api/my-collection/stats` | GET | Stats collection (total, par rareté, par tag) | 🟡 À venir |
-| `/api/marketplace` | GET | Liste enchères paginée | ✅ |
-| `/api/marketplace/{id}` | GET | Détail d'une enchère | ✅ |
-| `/api/marketplace/cards/{id}/sales` | GET | Prix moyen d'une carte | ✅ |
-| `/api/marketplace/mine` | GET | Mes enchères (`sellingCount`, `maxConcurrentAuctions`) | 🟡 À venir |
-| `/api/wikibidous` | GET | Solde (`balance`) | 🔵 Étude |
-| `/api/packs/open` | POST | Ouverture paquet (cartes obtenues, paquets restants) | 🟡 À venir |
-| `/api/profile/{username}` | GET | Profil public | 🔵 Étude |
-| `/api/trades?active=1` | GET | Échanges en cours | 🔵 Étude |
-| `/api/notifications` | GET | Notifications | 🔵 Étude |
-| `/api/showcase` | GET | Vitrine | 🔵 Étude |
-| `/api/cards?wishlist=1` | GET | Wishlist | 🔵 Étude |
-| `/api/friends` | GET | Liste d'amis | 🔵 Étude |
-| `/api/guilds` | GET | Guilde | 🔵 Étude |
-| `/api/battles` | GET | Combats | 🔵 Étude |
-| `/api/parties` | GET | Groupes | 🔵 Étude |
-| `/api/chat` | GET | Chat | 🔵 Étude |
-| `/api/achievements/check` | POST | Succès | ❌ Non exploitable |
+4. Rafraîchis la page de Wikimasters.
 
-**Légende** : ✅ Exploité, 🟡 En cours/à venir, 🔵 Étude, ❌ Non exploitable
+### Mises à jour
+
+Les mises à jour sont détectées automatiquement par Tampermonkey (toutes
+les 24h par défaut). Tu peux forcer une vérification manuelle via le menu
+de ton gestionnaire → **Vérifier les mises à jour**.
 
 ---
 
-## 📝 Documentation & Suivi
+## Utilisation
 
-- [ ] Mettre à jour `README.md` à chaque évolution fonctionnelle.
-- [ ] Maintenir `CHANGELOG.md` à jour à chaque version.
-- [ ] Tenir à jour la liste de ce TODO.
+| Page | Ce que tu vois |
+|---|---|
+| `/collection` | Badge prix sous chaque carte + halos favoris/tags |
+| `/marketplace` | Badge prix sous chaque enchère, avec comparaison dans le tooltip |
+| `/marketplace/{id}` | Comparateur live (acheteur) ou prix moyen (vendeur) |
+
+### Interactions sur PC
+
+- **Survol** d'un badge → tooltip avec prix exact, date du dernier
+  rafraîchissement, tendances 24h et 7j.
+- **Clic droit** sur un badge → force l'actualisation du prix.
+- **Clic gauche** ailleurs sur la carte → comportement natif du jeu
+  (ouverture de la carte).
+- **Clic sur le badge version** (haut-gauche) → ouvre la modale
+  "Nouveautés".
+
+### Interactions sur mobile
+
+Le script détecte automatiquement les petits écrans (moins de 768px de
+large) et adapte son comportement.
+
+- **Tap** sur un badge → ouvre un popup avec le prix, la date, les
+  tendances, un bouton **Rafraîchir** et un bouton **✕**.
+- **Appui long** (500ms) sur un badge → force l'actualisation directe,
+  avec un feedback visuel.
+- **Tap ailleurs sur la carte** → comportement natif du jeu (ouverture
+  de la carte).
+- **Tap sur le badge version** (haut-gauche) → ouvre la modale
+  "Nouveautés".
+
+### Interpréter un badge
+
+| Apparence | Signification |
+|---|---|
+| Symbole `▲`/`▼`/`=`/`—` + prix | Prix moyen connu, fraîcheur selon la couleur de fond |
+| `? —` sur fond gris | Aucune vente enregistrée pour cette carte |
+| `! —` sur fond sombre | Erreur de récupération (clic droit ou appui long pour réessayer) |
 
 ---
 
-## 📌 Notes techniques
+## Outils annexes
 
-### Endpoint `/api/my-collection/stats?sort=rarity`
+Le dossier [`tools/`](tools/) contient plusieurs snippets à coller dans la
+console DevTools pour gérer le cache (export, import, reset, statistiques,
+migration) ainsi qu'un outil de diagnostic. Voir
+[`tools/README.md`](tools/README.md).
 
-```json
-{
-  "total": 3734,
-  "rarityCounts": { "C": 2633, "L": 3, "R": 260, "PC": 706, "SR": 115, "UR": 17 },
-  "tagOptions": [
-    { "id": "...", "name": "79", "color": "#38bdf8", "cardCount": 47 },
-    { "id": "...", "name": "Animal", "color": "#008000", "cardCount": 1 }
-  ]
-}
+---
+
+## Compatibilité
+
+| Cible | Statut |
+|---|---|
+| Firefox PC + Tampermonkey | ✅ Testé |
+| Firefox mobile + Tampermonkey | ✅ Testé |
+| Chrome / Edge / Brave + Tampermonkey | ⚠️ Compatible (non testé) |
+| Firefox + Violentmonkey | ⚠️ Compatible (non testé) |
+| Firefox + Greasemonkey | ⚠️ Compatible (non testé) |
+
+---
+
+## Structure du projet
+
+```text
+wikimasters-helper/
+├── assets/                          # Captures pour la documentation
+│   ├── preview-collection.png
+│   └── preview-market.png
+├── docs/                            # Documentation technique
+│   ├── RELEASE.md                   # Workflow de publication
+│   └── TODO.md                      # Évolutions envisagées
+├── tools/                           # Snippets console
+│   ├── cache-migration.js
+│   ├── clear-trends.js
+│   ├── export-cache.js
+│   ├── health-check.js
+│   ├── import-cache.js
+│   ├── inspect-cache.js
+│   ├── reset-cache.js
+│   └── README.md
+├── .github/
+│   └── ISSUE_TEMPLATE/              # Templates d'issues GitHub
+├── wikimasters-helper.user.js       # UserScript principal
+├── .gitignore
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── LICENSE
+└── README.md
 ```
 
-### Endpoint `/api/packs/open` (POST, payload vide)
+---
 
-```json
-{
-  "cards": [
-    {
-      "id": "...",
-      "wikipedia_title": "...",
-      "rarity": "C",
-      "atk": 1884,
-      "def": 3691,
-      "category": "famille de langues",
-      "image_url": null
-    }
-  ],
-  "packs_remaining": 7,
-  "packs_last_regen_at": "2026-10-03T14:58:28.285Z",
-  "owned_copies": [
-    {
-      "id": "...",
-      "card_id": "...",
-      "starred": false,
-      "is_shiny": false,
-      "user_card_tags": []
-    }
-  ]
-}
-```
+## Fonctionnement du cache
+
+Le script maintient un cache local dans `localStorage` sous la clé
+`wikimasters-helper-cache`. Pour chaque carte croisée, il stocke :
+
+- Le dernier prix moyen connu et son horodatage
+- Un historique des prix observés, utilisé pour calculer les tendances
+
+### Mécanique de rafraîchissement
+
+À chaque fois qu'une carte est croisée (sur la collection ou le
+marketplace) :
+
+| Âge du cache | Comportement |
+|---|---|
+| Moins de 6h | Le prix du cache est utilisé. Aucun appel réseau. |
+| Entre 6h et 24h | Le prix du cache est affiché instantanément, puis un rafraîchissement silencieux est lancé en arrière-plan. |
+| Plus de 24h | Le prix est considéré comme trop vieux pour être fiable. Un appel réseau complet est fait en bloquant. |
+
+### Historique des variations
+
+Pour chaque carte, le script enregistre **un point d'historique** : le
+prix moyen observé à un instant T. Un nouveau point n'est ajouté que si
+le prix a changé **ou** si plus de 6h se sont écoulées depuis le dernier
+point. Le but : ne pas saturer l'historique avec des valeurs identiques
+prises à quelques minutes d'intervalle.
+
+Chaque carte conserve au maximum **100 points**, ce qui correspond à
+plusieurs semaines de suivi pour une carte active, ou à quelques jours
+pour une carte très volatile. Au-delà, les points les plus anciens sont
+supprimés en premier.
+
+### À retenir
+
+- **Vider le cache** = perdre l'historique des tendances (les prix seront
+  re-fetchés au prochain passage)
+- Le cache n'est **pas synchronisé** entre navigateurs ou comptes
+- Pour **sauvegarder / restaurer**, utilise les outils
+  [`export-cache.js`](tools/export-cache.js) et
+  [`import-cache.js`](tools/import-cache.js)
+
+---
+
+## Développement
+
+Les contributions, signalements de bugs et suggestions sont bienvenus.
+
+- **Signaler un bug ou proposer une amélioration** →
+  [ouvrir une issue](https://github.com/nicof79/wikimasters-helper/issues)
+- **Contribuer au code** → créer un fork, une branche dédiée, puis une Pull
+  Request
+
+Voir [`CHANGELOG.md`](CHANGELOG.md) pour l'historique des versions, et
+[`docs/RELEASE.md`](docs/RELEASE.md) pour le workflow de publication.
+Les évolutions envisagées sont listées dans
+[`docs/TODO.md`](docs/TODO.md).
+
+---
+
+## Licence
+
+Distribué sous licence [MIT](LICENSE).
+
+---

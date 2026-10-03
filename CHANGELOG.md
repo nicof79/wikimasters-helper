@@ -7,6 +7,20 @@ versionnage suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ---
 
+## [1.4.0] — 2026-10-03
+
+### Added
+- Badge version cliquable avec modale "What's new" affichant les 3
+  dernières versions du changelog
+- Nouveau style pour le badge version (discret, sans accent de couleur)
+
+### Changed
+- Position du badge version : haut-gauche, aligné avec les boutons
+  Wikibidous de droite
+- Badge visible en permanence mais discret (opacité réduite au repos)
+
+---
+
 ## [1.3.0] — 2026-10-03
 
 ### Added

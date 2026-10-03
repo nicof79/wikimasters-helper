@@ -102,6 +102,15 @@ recalcule instantanément à chaque frappe.
 Le prix moyen de la carte est affiché à côté du prix actuel pour t'aider
 à fixer ta mise de départ.
 
+### Badge version & nouveautés
+
+En haut à gauche de l'interface, un badge discret `WMH - vX.Y.Z` indique
+la version actuelle du script.
+
+Clique dessus pour ouvrir une modale **"Nouveautés"** qui affiche les
+3 dernières versions publiées, avec leurs changements respectifs. Le
+contenu est lu directement depuis le `CHANGELOG.md` du projet.
+
 ### Cache et fiabilité données
 
 - **Stockage local** (`localStorage`) pour réduire les requêtes vers
@@ -154,6 +163,8 @@ de ton gestionnaire → **Vérifier les mises à jour**.
 - **Clic droit** sur un badge → force l'actualisation du prix.
 - **Clic gauche** ailleurs sur la carte → comportement natif du jeu
   (ouverture de la carte).
+- **Clic sur le badge version** (haut-gauche) → ouvre la modale
+  "Nouveautés".
 
 ### Interactions sur mobile
 
@@ -166,8 +177,8 @@ large) et adapte son comportement.
   avec un feedback visuel.
 - **Tap ailleurs sur la carte** → comportement natif du jeu (ouverture
   de la carte).
-- **Badge version** déplacé en haut-gauche pour ne pas se superposer au
-  menu du bas.
+- **Tap sur le badge version** (haut-gauche) → ouvre la modale
+  "Nouveautés".
 
 ### Interpréter un badge
 
@@ -295,3 +306,13 @@ Les évolutions envisagées sont listées dans
 Distribué sous licence [MIT](LICENSE).
 
 ---
+
+## Remerciements
+
+Ce script s'inspire de deux userscripts existants pour Wikimasters :
+
+- *WikiMasters - Affichage des prix moyens (KKH)*
+- *WikiMasters, Instant Price Check*
+
+Certaines idées et techniques d'injection (React Fiber, halos, file
+d'attente de requêtes) en sont directement inspirées et adaptées.
