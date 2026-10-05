@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Wikimasters Helper
 // @namespace    wikimasters.helper
-// @version      1.5.0
+// @version      1.5.1
 // @description  Affiche le prix moyen des cartes, tendances, halos de favoris/tags et aide à la décision sur le marketplace.
 // @match        https://www.wiki-masters.com/*
 // @grant        none
@@ -17,15 +17,15 @@
 (() => {
   'use strict';
 
-  const VERSION = '1.5.0';
+  const VERSION = '1.5.1';
   const DEBUG = false;
 
   const log = (...args) => { if (DEBUG) console.log('%c[WMH]', 'color:#34d399;font-weight:bold', ...args); };
   const logWarn = (...args) => { if (DEBUG) console.warn('%c[WMH]', 'color:#fbbf24;font-weight:bold', ...args); };
   const logErr = (...args) => { if (DEBUG) console.error('%c[WMH]', 'color:#f87171;font-weight:bold', ...args); };
 
-  let rateLimitCount = 0;   // 429
-  let forbiddenCount = 0;   // total 403
+  let rateLimitCount = 0;
+  let forbiddenCount = 0;
 
   const IS_MOBILE = window.matchMedia('(max-width: 767px)').matches;
 
@@ -38,6 +38,37 @@
   };
 
   const _originalFetch = window.fetch.bind(window);
+
+  const preloadPackPrices = (cards) => {
+    if (!Array.isArray(cards)) return;
+    let delay = 0;
+    for (const c of cards) {
+      if (!c?.id || !c?.rarity) continue;
+      if (getCachedPrice(c.id)) continue;
+
+      const cardId = c.id;
+      const rarity = c.rarity;
+      const title = c.wikipedia_title;
+
+      setTimeout(() => {
+        if (STATE.pullsFetched.has(cardId) || STATE.pullsInFlight.has(cardId)) return;
+        STATE.pullsInFlight.add(cardId);
+        log(`🚀 Préchargement "${title}"`);
+        fetchPriceForCard(cardId, rarity, { title })
+          .then((price) => {
+            STATE.pullsInFlight.delete(cardId);
+            STATE.pullsFetched.add(cardId);
+            log(`✅ Préchargé "${title}" = ${price === null ? 'aucune vente' : price}`);
+            schedulePullsSync(0);
+          })
+          .catch(() => {
+            STATE.pullsInFlight.delete(cardId);
+            STATE.pullsFetched.add(cardId);
+          });
+      }, delay);
+      delay += 100;
+    }
+  };
 
   window.fetch = function (...args) {
     let url = '';
@@ -69,6 +100,7 @@
                   FETCH_INTERCEPT.lastPackCards = data.cards;
                   STATE.pullsFetched.clear();
                   STATE.pullsInFlight.clear();
+                  preloadPackPrices(data.cards);
                   if (location.pathname === '/pulls') {
                     schedulePullsSync(300);
                   }
@@ -104,7 +136,6 @@
       light: 3
     },
 
-    // ─── Dispatcher rate-limité ───
     CONCURRENCY: 3,
     FETCH_WINDOW_MS: 60000,
     FETCH_WINDOW_MAX: 25,
@@ -112,13 +143,10 @@
     PANIC_DURATION_MS: 60000,
     DISPATCHER_TICK_MS: 100,
 
-    // ─── Priorité viewport ───
     VIEWPORT_ROOT_MARGIN: '200px 0px',
 
-    // ─── Cooldown par carte sur 403 ───
     FORBIDDEN_COOLDOWN_MS: 30 * 1000,
 
-    // ─── Filtre collection (debounce) ───
     FILTER_DEBOUNCE_MS: 400,
 
     LONG_PRESS_DURATION: 500,
@@ -733,7 +761,6 @@
         else if (isCardCoolingDown(cardId)) showPriceBadge(root, card, null, 'blocked');
         else showPriceBadge(root, card, null, 'error');
 
-        // Marquer comme traité (ne reviendra pas dans la queue)
         root.dataset.wmFetched = '1';
       }
     } catch (e) {

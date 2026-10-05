@@ -7,6 +7,15 @@ versionnage suit [Semantic Versioning](https://semver.org/lang/fr/).
 
 ---
 
+## [1.5.1] — 2026-10-06
+
+### Fixed
+- **Préchargement des cartes de paquets** : les 5 fetchs de prix sont à
+  nouveau lancés dès la réception du POST `/api/packs/open`, avant même
+  l'affichage des cartes. Régression introduite en 1.5.0.
+
+---
+
 ## [1.5.0] — 2026-10-06
 
 ### Added
