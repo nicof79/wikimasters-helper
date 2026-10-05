@@ -102,14 +102,33 @@ recalcule instantanément à chaque frappe.
 Le prix moyen de la carte est affiché à côté du prix actuel pour t'aider
 à fixer ta mise de départ.
 
+### Prix à l'ouverture des paquets
+
+Sur la page d'ouverture de paquets (`/pulls`), chaque carte révélée
+affiche son prix moyen. Tu repères d'un coup d'œil les tirages de valeur,
+et les prix récupérés alimentent automatiquement le cache pour les
+consultations futures.
+
+### Performance et respect du serveur
+
+Le script utilise un **rate limiter à fenêtre glissante** : il ne dépasse
+jamais 25 requêtes par minute vers l'API. Les cartes visibles à l'écran
+sont traitées en priorité, le reste au fur et à mesure du scroll. Si un
+rate limit (403) survient malgré tout, le script bascule automatiquement
+en mode ralenti pendant 60 secondes.
+
+
+
 ### Badge version & nouveautés
 
 En haut à gauche de l'interface, un badge discret `WMH - vX.Y.Z` indique
 la version actuelle du script.
-
 Clique dessus pour ouvrir une modale **"Nouveautés"** qui affiche les
 3 dernières versions publiées, avec leurs changements respectifs. Le
 contenu est lu directement depuis le `CHANGELOG.md` du projet.
+Le badge version affiche sur sa deuxième ligne le nombre de
+403 et de rate limits rencontrés depuis le début de la session :
+`⚠️ R:0 · 403:2`
 
 ### Cache et fiabilité données
 
@@ -155,6 +174,7 @@ de ton gestionnaire → **Vérifier les mises à jour**.
 | `/collection` | Badge prix sous chaque carte + halos favoris/tags |
 | `/marketplace` | Badge prix sous chaque enchère, avec comparaison dans le tooltip |
 | `/marketplace/{id}` | Comparateur live (acheteur) ou prix moyen (vendeur) |
+| `/pulls` | Badge prix sur chaque carte révélée pendant l'ouverture |
 
 ### Interactions sur PC
 

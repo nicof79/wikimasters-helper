@@ -123,6 +123,26 @@ contenu est lu directement depuis le `CHANGELOG.md` du projet.
 - **Clic droit** (ou appui long sur mobile) sur n'importe quel badge
   pour forcer l'actualisation manuelle.
 
+### Optimisation latence fetch (suite)
+
+Le rate limiter v1.5.0 fonctionne mais les premières cartes d'une page
+jamais visitée peuvent mettre 20-30 secondes à s'afficher.
+
+Pistes à explorer :
+- [ ] Mesurer le gain réel du viewport-first en usage quotidien
+- [ ] Évaluer si on peut augmenter la fenêtre à 28-30 req/min (sans casser)
+- [ ] Vérifier que le cache joue bien son rôle après plusieurs visites
+
+### 500 et 404 sur certaines cartes
+
+Certaines cartes renvoient systématiquement 500 (erreur serveur) ou 404
+(carte supprimée/inaccessible) sur l'endpoint `/sales`. Elles sont
+actuellement traitées comme des erreurs et retentées.
+
+- [ ] Identifier les cartes concernées (ex : Boscagli, Mézenc...)
+- [ ] Marquer ces cartes comme "à ne pas retenter" pour la session
+- [ ] Si le 500 est temporaire côté serveur, laisser le comportement actuel
+
 ---
 
 ## Installation
